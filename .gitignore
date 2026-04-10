@@ -12,3 +12,6 @@ staticfiles/
 
 # Vercel
 .vercel
+
+.vercel
+.env*.local
