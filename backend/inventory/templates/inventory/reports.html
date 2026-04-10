@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports | RestoStock{% endblock %}
+{% block header %}Reports & Analytics{% endblock %}
+
+{% block extra_head %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @media print {
+            aside, header, .flex.gap-3, #exportPdf, button {
+                display: none !important;
+            }
+            main {
+                width: 100% !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            body {
+                background-color: white !important;
+            }
+            .grid {
+                display: block !important;
+            }
+            .grid > div {
+                margin-bottom: 2rem !important;
+                page-break-inside: avoid;
+            }
+            .bg-white {
+                border: none !important;
+                box-shadow: none !important;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Filters & Export -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <p class="text-slate-600">Comprehensive insights into your inventory performance</p>
+        <div class="flex gap-3">
+            <select id="reportFilter" class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="30days">Last 30 Days</option>
+                <option value="3months">Last 3 Months</option>
+                <option value="1year">Last Year</option>
+            </select>
+            <button id="exportPdf" class="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Purchase Trends -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16" />
+                </svg>
+                Inventory Value Trends
+            </h3>
+            <div class="h-[300px]">
+                <canvas id="purchaseChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Usage Distribution -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+                Wastage by Category
+            </h3>
+            <div class="h-[300px] flex items-center justify-center">
+                <canvas id="wastageChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Table Card -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100">
+             <h3 class="font-bold text-slate-800">Category Statistics</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50/50">
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Total Items</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Avg. Cost</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Turnover</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-6 py-4 font-bold text-slate-900">Beverages</td>
+                        <td class="px-6 py-4 text-slate-600">42</td>
+                        <td class="px-6 py-4 text-slate-600">₹12.50</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-emerald-600">+14%</span>
+                                <div class="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-emerald-500" style="width: 75%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase rounded">Optimal</span>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-6 py-4 font-bold text-slate-900">Vegetables</td>
+                        <td class="px-6 py-4 text-slate-600">85</td>
+                        <td class="px-6 py-4 text-slate-600">₹3.20</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-amber-600">-2%</span>
+                                <div class="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-amber-500" style="width: 45%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase rounded">Attention</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Purchase Trends Chart
+    const ctxPurchase = document.getElementById('purchaseChart').getContext('2d');
+    const purchaseChart = new Chart(ctxPurchase, {
+        type: 'line',
+        data: {
+            labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
+            datasets: [{
+                label: 'Stock Value (₹)',
+                data: [4500, 5200, 4800, 6100, 5800, 7200],
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Wastage Chart
+    const ctxWastage = document.getElementById('wastageChart').getContext('2d');
+    const wastageChart = new Chart(ctxWastage, {
+        type: 'doughnut',
+        data: {
+            labels: ['Vegetables', 'Plant Proteins', 'Dairy', 'Others'],
+            datasets: [{
+                data: [120, 85, 45, 30],
+                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 6 } }
+            },
+            cutout: '70%'
+        }
+    });
+
+    // Data Sets for different time ranges
+    const reportData = {
+        '30days': {
+            labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
+            trend: [4500, 5200, 4800, 6100, 5800, 7200],
+            wastage: [120, 85, 45, 30],
+            stats: [
+                { name: 'Beverages', items: 42, cost: '₹12.50', trend: '+14%', width: '75%', color: 'emerald', status: 'Optimal' },
+                { name: 'Vegetables', items: 85, cost: '₹3.20', trend: '-2%', width: '45%', color: 'amber', status: 'Attention' }
+            ]
+        },
+        '3months': {
+            labels: ['Jan', 'Feb', 'Mar'],
+            trend: [5800, 6400, 7200],
+            wastage: [350, 210, 120, 90],
+            stats: [
+                { name: 'Beverages', items: 120, cost: '₹11.80', trend: '+8%', width: '60%', color: 'emerald', status: 'Good' },
+                { name: 'Vegetables', items: 210, cost: '₹3.50', trend: '+5%', width: '70%', color: 'emerald', status: 'Optimal' }
+            ]
+        },
+        '1year': {
+            labels: ['2025 Q1', '2025 Q2', '2025 Q3', '2025 Q4', '2026 Q1'],
+            trend: [15000, 18500, 22000, 19500, 25000],
+            wastage: [1500, 900, 600, 400],
+            stats: [
+                { name: 'Beverages', items: 450, cost: '₹10.20', trend: '+22%', width: '85%', color: 'emerald', status: 'Optimal' },
+                { name: 'Vegetables', items: 800, cost: '₹2.90', trend: '+12%', width: '80%', color: 'emerald', status: 'Stable' }
+            ]
+        }
+    };
+
+    function updateCharts(period) {
+        const data = reportData[period];
+        
+        // Update Line Chart
+        purchaseChart.data.labels = data.labels;
+        purchaseChart.data.datasets[0].data = data.trend;
+        purchaseChart.update();
+        
+        // Update Doughnut Chart
+        wastageChart.data.datasets[0].data = data.wastage;
+        wastageChart.update();
+
+        // Update Stats Table
+        const tbody = document.querySelector('tbody');
+        tbody.innerHTML = data.stats.map(s => `
+            <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="px-6 py-4 font-bold text-slate-900">${s.name}</td>
+                <td class="px-6 py-4 text-slate-600">${s.items}</td>
+                <td class="px-6 py-4 text-slate-600">${s.cost}</td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-${s.color}-600">${s.trend}</span>
+                        <div class="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-${s.color}-500" style="width: ${s.width}"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <span class="px-2 py-1 bg-${s.color}-50 text-${s.color}-700 text-[10px] font-bold uppercase rounded">${s.status}</span>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Event Listener
+    document.getElementById('reportFilter').addEventListener('change', (e) => {
+        updateCharts(e.target.value);
+    });
+
+    // Handle PDF Export
+    document.getElementById('exportPdf').addEventListener('click', () => {
+        window.print();
+    });
+</script>
+{% endblock %}

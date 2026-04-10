@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory | RestoStock{% endblock %}
+{% block header %}Inventory Management{% endblock %}
+
+{% block content %}
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+        <a href="{% url 'inventory_list' %}" class="px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap {% if not request.GET.category %}bg-indigo-600 text-white{% else %}bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600{% endif %}">All Items</a>
+        {% for category in categories %}
+            <a href="{% url 'inventory_list' %}?category={{ category.id }}" class="px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap {% if request.GET.category == category.id|stringformat:'i' %}bg-indigo-600 text-white{% else %}bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600{% endif %}">
+                {{ category.name }}
+            </a>
+        {% endfor %}
+    </div>
+    
+    <a href="{% url 'admin:inventory_item_add' %}" class="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Add New Item
+    </a>
+</div>
+
+<!-- Table Container -->
+<div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-100">
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Item Details</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Stock Levels</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Value</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for item in items %}
+                <tr class="hover:bg-slate-50/50 transition-colors group">
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-slate-900">{{ item.name }}</span>
+                            <span class="text-xs text-slate-400 uppercase font-medium tracking-tight mt-0.5">{{ item.supplier|default:"No Supplier" }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm text-slate-600">{{ item.category.name }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-slate-700">{{ item.quantity }} {{ item.unit }}</span>
+                            <div class="w-24 h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                                <div class="h-full rounded-full transition-all {% if item.status == 'in-stock' %}bg-emerald-500{% elif item.status == 'low-stock' %}bg-amber-500{% else %}bg-red-500{% endif %} {% if item.quantity > 0 %}w-full{% else %}w-0{% endif %}"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {% if item.status == 'in-stock' %}bg-emerald-50 text-emerald-700{% elif item.status == 'low-stock' or item.status == 'expiring-soon' %}bg-amber-50 text-amber-700{% else %}bg-red-50 text-red-700{% endif %}">
+                            <span class="w-1.5 h-1.5 rounded-full mr-2 {% if item.status == 'in-stock' %}bg-emerald-500{% elif item.status == 'low-stock' or item.status == 'expiring-soon' %}bg-amber-500{% else %}bg-red-500{% endif %}"></span>
+                            {{ item.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-slate-900">₹{{ item.cost_per_unit|floatformat:2 }}</span>
+                            <span class="text-[10px] text-slate-400">per {{ item.unit }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <a href="{% url 'admin:inventory_item_change' item.id %}" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </a>
+                            <a href="{% url 'admin:inventory_item_delete' item.id %}" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                            </div>
+                            <h4 class="text-slate-900 font-bold">No inventory items found</h4>
+                            <p class="text-slate-500 text-sm mt-1">Start by adding your first restaurant item.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
